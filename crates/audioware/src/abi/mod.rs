@@ -354,13 +354,17 @@ pub fn exports() -> impl Exportable {
 
 /// On RTTI registration.
 extern "C" fn register() {
+    crate::trace("rtti register enter");
     lifecycle!("on RTTI register");
+    crate::trace("rtti register exit");
 }
 
 /// Once RTTI registered.
 extern "C" fn post_register() {
+    crate::trace("rtti post register enter");
     lifecycle!("on RTTI post register");
     Audioware::once_rtti_registered();
+    crate::trace("rtti post register exit");
 }
 
 /// Once plugin initialized.
