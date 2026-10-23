@@ -7,7 +7,8 @@ pub type VoidFunctionPointerCallback =
 #[repr(C)]
 pub struct Callback<F, H: 'static> {
     callback: PhantomData<F>,
-    buffer: [u8; 0x20],
+    // Patch 2.5: the game's FixedSizeFunction inline buffer grew from 32 to 64 bytes.
+    buffer: [u8; 0x40],
     handler: &'static H,
 }
 
@@ -20,7 +21,7 @@ impl<F: Callable<A, R>, A, R> Callback<F, CallbackHandler<F, A, R>> {
     };
 
     pub fn new(callback: F) -> Self {
-        let mut buffer = [0u8; 0x20];
+        let mut buffer = [0u8; 0x40];
         unsafe { ptr::write(buffer.as_mut_ptr().cast::<F>(), callback) };
         Self {
             callback: PhantomData,
