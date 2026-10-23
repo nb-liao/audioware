@@ -37,11 +37,14 @@ pub(crate) use types::*;
 
 /// Register [plugin][super::Plugin] lifecycle listeners.
 pub fn register_listeners(env: &SdkEnv) {
+    crate::trace("register_listeners enter");
     RttiRegistrator::add(Some(register), Some(post_register));
+    crate::trace("rtti registrator added");
     env.add_listener(
         StateType::Initialization,
         StateListener::default().with_on_exit(on_exit_initialization),
     );
+    crate::trace("state listener added");
 }
 
 macro_rules! g {

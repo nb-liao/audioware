@@ -3,10 +3,19 @@
 
 include!(concat!(env!("OUT_DIR"), "/version.rs"));
 
+use std::io::Write;
+
 use red4ext_rs::{
     Exportable, Plugin, SdkEnv, SemVer, U16CStr, export_plugin_symbols, log::error, wcstr,
 };
 pub use types::*;
+
+pub fn trace(message: &str) {
+    let path = std::env::temp_dir().join("audioware-trace.log");
+    if let Ok(mut file) = std::fs::OpenOptions::new().create(true).append(true).open(path) {
+        let _ = writeln!(file, "[{}] {}", std::process::id(), message);
+    }
+}
 
 #[cfg(feature = "hot-reload")]
 #[allow(dead_code, reason = "depends on feature enabled")]
@@ -35,10 +44,16 @@ impl Plugin for Audioware {
 
     /// Initialize plugin.
     fn on_load(env: &SdkEnv) {
+        std::panic::set_hook(Box::new(|info| {
+            trace(&format!("panic: {info:?}"));
+        }));
+        trace("on_load enter");
         abi::register_listeners(env);
+        trace("listeners registered");
         if let Err(e) = queue::spawn() {
             error!(env, "Error: {e}");
         }
+        trace("on_load exit");
     }
 
     /// Terminate plugin.
@@ -65,7 +80,10 @@ impl Plugin for Audioware {
     /// Register types in [RTTI][red4ext_rs::RttiSystem].
     #[allow(clippy::transmute_ptr_to_ref, reason = "upstream lint")]
     fn exports() -> impl Exportable {
-        abi::exports()
+        trace("plugin exports enter");
+        let exports = abi::exports();
+        trace("plugin exports exit");
+        exports
     }
 }
 

@@ -30,19 +30,25 @@ mod script_audio_player;
 mod vo;
 
 pub fn attach(env: &SdkEnv) {
+    crate::trace("hooks attach enter");
     #[cfg(all(debug_assertions, feature = "research", feature = "redengine"))]
     audio_interface::attach_hook(env);
     sound_engine::attach_hooks(env);
+    crate::trace("hooks: sound_engine done");
     sound_component::attach_hook(env);
     camera_component::attach_hooks(env);
+    crate::trace("hooks: camera done");
     audio::attach_hook(env);
     audio_system::attach_hooks(env);
+    crate::trace("hooks: audio_system done");
     time_dilatable::attach_hooks(env);
     time_system::attach_hooks(env);
+    crate::trace("hooks: time done");
     ink_menu_scenario::attach_hooks(env);
     entity::attach_hooks(env);
     ui_system::attach_hook(env);
     ink_logic_controller::attach_hook(env);
+    crate::trace("hooks attach exit");
 
     #[cfg(feature = "research")]
     {
