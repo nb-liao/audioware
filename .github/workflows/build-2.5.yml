@@ -1,0 +1,52 @@
+name: Build Audioware 2.5
+
+on:
+  push:
+    branches:
+      - patch-2.5-build
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    env:
+      CARGO_TERM_COLOR: always
+      LIBCLANG_PATH: C:\Program Files\LLVM\bin
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Build
+        run: cargo build --release -p audioware
+
+      - name: Package
+        shell: pwsh
+        run: |
+          $stage = "artifacts"
+          New-Item -ItemType Directory -Force -Path "$stage/red4ext/plugins/audioware" | Out-Null
+          Copy-Item "target/release/audioware.dll" "$stage/red4ext/plugins/audioware/audioware.dll"
+          $src = (Resolve-Path "crates/audioware/reds").Path
+          Get-ChildItem $src -Recurse -File |
+            Where-Object { $_.FullName -notmatch '\\Debug\\' -and $_.Name -ne 'Debug.reds' } |
+            ForEach-Object {
+              $rel = $_.FullName.Substring($src.Length + 1)
+              $dest = Join-Path "$stage/r6/scripts/Audioware" $rel
+              New-Item -ItemType Directory -Force -Path (Split-Path $dest) | Out-Null
+              Copy-Item $_.FullName $dest -Force
+            }
+          Compress-Archive -Path "$stage/*" -DestinationPath "Audioware-1.9.9-2.5-compat.zip" -Force
+          Get-ChildItem artifacts -Recurse -File
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Audioware-2.5-compat
+          path: Audioware-1.9.9-2.5-compat.zip
+          if-no-files-found: error
